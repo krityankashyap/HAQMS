@@ -27,7 +27,6 @@ export default function QueueMonitor() {
       setTokens(data);
       setError('');
     } catch (err) {
-      console.error('Queue poll fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
