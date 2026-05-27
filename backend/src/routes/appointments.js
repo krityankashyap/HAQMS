@@ -43,23 +43,29 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Patient, Doctor, and Appointment Date are required.' });
     }
 
-    const appDate = new Date(appointmentDate);
+    // Normalize to the minute — strip seconds and milliseconds so that
+    // "10:00:00.000" and "10:00:00.500" both resolve to the same slot.
+    const raw = new Date(appointmentDate);
+    const appDate = new Date(Math.floor(raw.getTime() / 60000) * 60000);
 
-    // Flawed duplicate check:
-    // It only checks if the exact millisecond matches. If the candidate books for "2026-05-25 10:00:00"
-    // and another for "2026-05-25 10:00:01", they are treated as unique!
-    // Junior dev logic: "Same time bookings will be blocked."
+    if (isNaN(appDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid appointment date.' });
+    }
+
+    // Duplicate check covers the full normalized minute so any sub-second
+    // variation from the client cannot bypass it.
+    const slotEnd = new Date(appDate.getTime() + 60000);
     const existingBooking = await prisma.appointment.findFirst({
       where: {
         doctorId,
-        appointmentDate: appDate,
+        appointmentDate: { gte: appDate, lt: slotEnd },
         status: { not: 'CANCELLED' },
       },
     });
 
     if (existingBooking) {
-      return res.status(400).json({
-        error: 'Double booking blocked. Doctor already has an appointment at this exact millisecond.',
+      return res.status(409).json({
+        error: 'Doctor already has an appointment at this time slot. Please choose a different time.',
       });
     }
 
@@ -78,7 +84,8 @@ router.post('/', authenticate, async (req, res) => {
       appointment,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to book appointment', details: error.message });
+    console.error('[appointments] POST /:', error);
+    res.status(500).json({ error: 'Failed to book appointment' });
   }
 });
 
@@ -99,7 +106,8 @@ router.patch('/:id', authenticate, async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update appointment', details: error.message });
+    console.error('[appointments] PATCH /:id:', error);
+    res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
 
