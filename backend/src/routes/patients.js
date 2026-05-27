@@ -117,6 +117,12 @@ router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
 
     res.json({ message: `Successfully deleted patient ${patient.name}` });
   } catch (error) {
+    // P2003: foreign key constraint — patient has linked appointments or queue tokens
+    if (error.code === 'P2003') {
+      return res.status(409).json({
+        error: 'Cannot delete patient with existing appointments or queue records. Cancel or reassign linked records first.',
+      });
+    }
     console.error('[patients] DELETE /:id:', error);
     res.status(500).json({ error: 'Failed to delete patient' });
   }
