@@ -37,6 +37,7 @@ export default function Dashboard() {
 
   // Queue and Appointment Booking
   const [doctorsList, setDoctorsList] = useState([]);
+  const [physicianRegistryResults, setPhysicianRegistryResults] = useState([]);
   const [bookingPatientId, setBookingPatientId] = useState('');
   const [bookingDoctorId, setBookingDoctorId] = useState('');
   const [bookingDate, setBookingDate] = useState('');
@@ -85,6 +86,11 @@ export default function Dashboard() {
     if (!user || user.role !== 'DOCTOR' || doctorsList.length === 0) return;
     fetchDoctorWorklist();
   }, [doctorsList, user?.id]);
+
+  // Mirror the full doctors list into the registry view on initial load
+  useEffect(() => {
+    if (doctorsList.length > 0) setPhysicianRegistryResults(doctorsList);
+  }, [doctorsList]);
 
   // Guard — placed after all hooks so the Rules of Hooks are not violated
   if (!user) return null;
@@ -357,14 +363,17 @@ export default function Dashboard() {
   // Search Doctors (SQL Injection vulnerable API!)
   const searchPhysiciansAdmin = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/doctors?search=${adminSearchQuery}`, {
+      const url = adminSearchQuery.trim()
+        ? `${API_BASE_URL}/doctors?search=${encodeURIComponent(adminSearchQuery)}`
+        : `${API_BASE_URL}/doctors`;
+      const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (Array.isArray(data)) {
-        setDoctorsList(data);
+        setPhysicianRegistryResults(data);
       } else {
-        alert(`API Error: ${data.sqlMessage || data.error}`);
+        alert(`API Error: ${data.error}`);
       }
     } catch (e) {
       console.error(e);
@@ -1123,7 +1132,7 @@ export default function Dashboard() {
 
             {/* Doctors Result List */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {doctorsList.map((doc) => (
+              {physicianRegistryResults.map((doc) => (
                 <div
                   key={doc.id}
                   className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-500/5 flex flex-col justify-between"

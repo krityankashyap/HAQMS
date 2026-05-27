@@ -12,7 +12,11 @@ router.get('/', authenticate, async (req, res) => {
 
     const where = {};
     if (search && typeof search === 'string') {
-      where.name = { contains: String(search), mode: 'insensitive' };
+      where.OR = [
+        { name:           { contains: search, mode: 'insensitive' } },
+        { specialization: { contains: search, mode: 'insensitive' } },
+        { department:     { contains: search, mode: 'insensitive' } },
+      ];
     }
     if (specialization && typeof specialization === 'string' && specialization !== 'All') {
       where.specialization = String(specialization);
