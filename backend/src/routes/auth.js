@@ -32,14 +32,10 @@ router.post('/register', async (req, res) => {
         name,
         role: role || 'RECEPTIONIST',
       },
+      select: { id: true, email: true, name: true, role: true },
     });
 
-    // INCONSISTENT API RESPONSE: Returns the created user object directly, including password hash!
-    // This is a major security flaw.
-    res.status(201).json({
-      message: 'User registered successfully',
-      user,
-    });
+    res.status(201).json({ message: 'User registered successfully', user });
   } catch (error) {
     console.error('[auth] POST /register:', error);
     res.status(500).json({ error: 'Server error during registration' });
@@ -106,9 +102,10 @@ router.get('/me', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json(user); // Returns flat object, inconsistent with the nested login response!
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('[auth] GET /me:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
