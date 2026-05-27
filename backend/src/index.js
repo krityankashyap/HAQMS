@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
+// load .env before requiring config — config validates env vars at require-time and throws if any are missing
+const { CORS_ALLOWED_ORIGINS } = require('./config');
 
 const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
@@ -15,8 +17,7 @@ const reportRoutes = require('./routes/reports');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS for all origins (weak/broad CORS config)
-app.use(cors());
+app.use(cors({ origin: CORS_ALLOWED_ORIGINS }));
 
 // Body parser
 app.use(express.json());
@@ -44,16 +45,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// GLOBAL ERROR HANDLER
-// BUG: Improper error handling. It returns the raw error stack trace to the client,
-// which leaks details about database types, schema layout, and file paths.
 app.use((err, req, res, next) => {
-  console.error('[CRITICAL-ERROR]:', err);
-  res.status(500).json({
-    message: 'An unexpected internal server error occurred!',
-    error: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-  });
+  console.error('[ERROR]:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Listen on port
