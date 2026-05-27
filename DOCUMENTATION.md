@@ -12,6 +12,7 @@ missing constraints/indexes), and frontend issues (memory leak, hardcoded URLs, 
 |---|--------|----------------|
 | 0 | — | **Reconstructed `backend/prisma/schema.prisma`, `seed.js`, `.env.example`** — the forked repo shipped without the entire `backend/prisma/` directory and `.env.example`; these files were rebuilt from scratch by reading all route files to infer the exact model shapes, enums, and relations. Seed includes Clark Kent (null `medicalHistory`) and Bruce Wayne (empty string) to reproduce the NULL-crash bug on video. |
 | 1 | fix(security): eliminate SQL injection in doctors search | **SQL injection in `GET /api/doctors`** — `$queryRawUnsafe` with direct string interpolation of `search` and `specialization` replaced with `prisma.doctor.findMany({ where })` using `{ contains, mode: 'insensitive' }` for name and exact match for specialization. Query params coerced with `typeof` guard + `String()` to prevent array-input crash. |
+| 2 | fix(security): remove broken access control on patient delete | **Broken access control on `DELETE /api/patients/:id`** — the vulnerability was a redundant auth path: a working `authorize()` factory existed in `auth.js`, but the delete route was wired to `authorizeAdminOnlyLegacy`, a legacy stand-in whose role check had been commented out, letting any authenticated user delete patients. Fix removed the broken abstraction entirely and consolidated onto the existing `authorize(['ADMIN'])` factory, rather than re-arming the dead check. |
 
 ## Optimizations Performed
 _(to be filled as fixes land)_
