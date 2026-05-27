@@ -13,12 +13,15 @@ missing constraints/indexes), and frontend issues (memory leak, hardcoded URLs, 
 | 0 | — | **Reconstructed `backend/prisma/schema.prisma`, `seed.js`, `.env.example`** — the forked repo shipped without the entire `backend/prisma/` directory and `.env.example`; these files were rebuilt from scratch by reading all route files to infer the exact model shapes, enums, and relations. Seed includes Clark Kent (null `medicalHistory`) and Bruce Wayne (empty string) to reproduce the NULL-crash bug on video. |
 | 1 | fix(security): eliminate SQL injection in doctors search | **SQL injection in `GET /api/doctors`** — `$queryRawUnsafe` with direct string interpolation of `search` and `specialization` replaced with `prisma.doctor.findMany({ where })` using `{ contains, mode: 'insensitive' }` for name and exact match for specialization. Query params coerced with `typeof` guard + `String()` to prevent array-input crash. |
 | 2 | fix(security): remove broken access control on patient delete | **Broken access control on `DELETE /api/patients/:id`** — the vulnerability was a redundant auth path: a working `authorize()` factory existed in `auth.js`, but the delete route was wired to `authorizeAdminOnlyLegacy`, a legacy stand-in whose role check had been commented out, letting any authenticated user delete patients. Fix removed the broken abstraction entirely and consolidated onto the existing `authorize(['ADMIN'])` factory, rather than re-arming the dead check. |
+| 2b | fix(security): strip error detail leak from patient delete response | Follow-on to #2 — `details: error.message` in the DELETE handler leaked Prisma internals (table names, file paths). Replaced with `console.error` server-side + generic response, consistent with the standard error-handling pattern. |
+| 3 | fix(security): remove plaintext password logging and stack-trace leaks in auth routes | **Three plaintext exposures removed**: (1) `console.log(JSON.stringify(req.body))` on register logged the entire request body including the raw password; (2) `console.log(... with password: ${req.body.password})` on login logged the plaintext credential explicitly. Both log lines deleted. **Two error-handler leaks fixed in the same commit**: (3) register catch returned `databaseError: error.message`; (4) login catch returned `errorStack: error.stack`. Both stripped to generic messages with full errors logged server-side only. |
 
 ## Optimizations Performed
 _(to be filled as fixes land)_
 
 ## Remaining Known Issues
-_(to be filled as work progresses)_
+
+- **`DELETE /api/patients/:id` 500s for patients with appointments** — admin delete now correctly enforces auth, but `prisma.patient.delete()` will throw a FK constraint error for any patient who has linked appointments or queue tokens (i.e., most real patients). Proper fix requires one of: (a) cascade delete (dangerous — silently wipes appointment history); (b) soft-delete with a `deletedAt` flag (preserves history, preferred for medical records); or (c) block the delete with a clear 409 response and require the caller to reassign or cancel linked records first. Left out of scope for this assessment.
 
 ## Major Decisions & Reasoning
 - **Schema reconstructed, not invented**: every field type and relation was derived from actual
