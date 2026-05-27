@@ -58,7 +58,10 @@ router.get('/:id', authenticate, async (req, res) => {
     const patient = await prisma.patient.findUnique({
       where: { id: req.params.id },
       include: {
-        appointments: true, // Fetching relation direct
+        appointments: {
+          include: { doctor: { select: { id: true, name: true, specialization: true, department: true } } },
+          orderBy: { appointmentDate: 'desc' },
+        },
       },
     });
 
