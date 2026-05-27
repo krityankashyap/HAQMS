@@ -67,6 +67,25 @@ export default function Dashboard() {
     }
   }, [user?.role]);
 
+  // All useEffects must be declared before any conditional return (Rules of Hooks).
+  // Each guards internally with `if (!user) return` so they are safe when user is null.
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'RECEPTIONIST' || user.role === 'ADMIN') {
+      fetchPatients(1);
+    }
+  }, [patientSearch, patientGender, user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchDoctorsDropdown();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'DOCTOR' || doctorsList.length === 0) return;
+    fetchDoctorWorklist();
+  }, [doctorsList, user?.id]);
+
   // Guard — placed after all hooks so the Rules of Hooks are not violated
   if (!user) return null;
 
@@ -98,13 +117,6 @@ export default function Dashboard() {
     }
   };
 
-  // Trigger Patient List Fetch (Every keystroke trigger re-renders parent! - Performance bug)
-  useEffect(() => {
-    if (user.role === 'RECEPTIONIST' || user.role === 'ADMIN') {
-      fetchPatients(1);
-    }
-  }, [patientSearch, patientGender]);
-
   // Fetch Doctors for booking drop-down
   const fetchDoctorsDropdown = async () => {
     try {
@@ -117,10 +129,6 @@ export default function Dashboard() {
       console.error(e);
     }
   };
-
-  useEffect(() => {
-    fetchDoctorsDropdown();
-  }, []);
 
   // Handle Patient Registration
   const handleRegisterPatient = async (e) => {
@@ -283,11 +291,7 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    if (user.role === 'DOCTOR' && doctorsList.length > 0) {
-      fetchDoctorWorklist();
-    }
-  }, [doctorsList]);
+
 
   // Update token status (WAITING -> CALLING -> COMPLETED / SKIPPED)
   const handleUpdateQueueStatus = async (tokenId, newStatus) => {
@@ -1091,7 +1095,7 @@ export default function Dashboard() {
                 Staff Physicians Registry Lookup
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">
-                Database lookup for credentials. Uses a raw SQL interpolation backend query.
+                Search and filter registered physicians by name or specialization.
               </p>
             </div>
 
@@ -1104,7 +1108,7 @@ export default function Dashboard() {
                   type="text"
                   value={adminSearchQuery}
                   onChange={(e) => setAdminSearchQuery(e.target.value)}
-                  placeholder="Enter physician name search criteria (raw syntax supported)..."
+                  placeholder="Search by name..."
                   className="block w-full pl-9 pr-3 py-2 border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                 />
               </div>
@@ -1113,19 +1117,8 @@ export default function Dashboard() {
                 onClick={searchPhysiciansAdmin}
                 className="glow-btn px-5 py-2 bg-slate-900 text-white dark:bg-teal-500 dark:text-slate-950 font-bold text-xs rounded-lg hover:bg-slate-800 dark:hover:bg-teal-400 transition-colors"
               >
-                Execute SQL Query
+                Search
               </button>
-            </div>
-
-            <div className="p-3 bg-rose-500/10 text-rose-500 text-xs rounded-lg border border-rose-500/20 font-semibold leading-5 flex gap-3">
-              <ShieldAlert className="h-5 w-5 shrink-0" />
-              <div>
-                <strong>SQL Vulnerability alert:</strong> This search executes raw interpolation: 
-                <code className="block bg-black/10 dark:bg-black/30 p-1.5 rounded mt-1 font-mono">
-                  SELECT * FROM &quot;Doctor&quot; WHERE name ILIKE &apos;%&#123;query&#125;%&apos;
-                </code>
-                Can be audited by inputting standard SQL injection strings to leak full user login lists.
-              </div>
             </div>
 
             {/* Doctors Result List */}
