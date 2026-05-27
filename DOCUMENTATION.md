@@ -32,6 +32,7 @@ missing constraints/indexes), and frontend issues (memory leak, hardcoded URLs, 
 
 ## Remaining Known Issues
 
+- **`react-hooks/exhaustive-deps` warning on queue page interval effect**: `fetchQueueData` is not listed in the `useEffect` deps array. The correct full fix is to wrap `fetchQueueData` in `useCallback` (with its own stable deps) and then add it to the effect deps — left out of scope for this bug. The warning is intentional signal; suppressing it with `eslint-disable` would hide the incomplete fix. The interval itself is correct: it fires every 3s, cleans up on unmount, and `setRefreshCount(prev => prev + 1)` already uses the functional updater form so it doesn't close over stale state.
 - **`DELETE /api/patients/:id` 500s for patients with appointments** — admin delete now correctly enforces auth, but `prisma.patient.delete()` will throw a FK constraint error for any patient who has linked appointments or queue tokens (i.e., most real patients). Proper fix requires one of: (a) cascade delete (dangerous — silently wipes appointment history); (b) soft-delete with a `deletedAt` flag (preserves history, preferred for medical records); or (c) block the delete with a clear 409 response and require the caller to reassign or cancel linked records first. Left out of scope for this assessment.
 
 ## Major Decisions & Reasoning
