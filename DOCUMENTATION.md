@@ -11,6 +11,7 @@ missing constraints/indexes), and frontend issues (memory leak, hardcoded URLs, 
 | # | Commit | What was fixed |
 |---|--------|----------------|
 | 0 | — | **Reconstructed `backend/prisma/schema.prisma`, `seed.js`, `.env.example`** — the forked repo shipped without the entire `backend/prisma/` directory and `.env.example`; these files were rebuilt from scratch by reading all route files to infer the exact model shapes, enums, and relations. Seed includes Clark Kent (null `medicalHistory`) and Bruce Wayne (empty string) to reproduce the NULL-crash bug on video. |
+| 1 | fix(security): eliminate SQL injection in doctors search | **SQL injection in `GET /api/doctors`** — `$queryRawUnsafe` with direct string interpolation of `search` and `specialization` replaced with `prisma.doctor.findMany({ where })` using `{ contains, mode: 'insensitive' }` for name and exact match for specialization. Query params coerced with `typeof` guard + `String()` to prevent array-input crash. |
 
 ## Optimizations Performed
 _(to be filled as fixes land)_
@@ -21,6 +22,11 @@ _(to be filled as work progresses)_
 ## Major Decisions & Reasoning
 - **Schema reconstructed, not invented**: every field type and relation was derived from actual
   Prisma client calls in the route files, not guessed. No extra fields added.
+- **Standard error-handling pattern (all routes)**: `console.error` the full error server-side;
+  return only `{ error: '<generic message>' }` to the client — no `details`, `sqlMessage`,
+  `databaseError`, `errorStack`, or any field derived from `error.message`. Prisma errors can
+  leak table/column names; Express stack traces expose file paths. Applied consistently on every
+  route touched.
 - **No `@@unique([doctorId, date, tokenNumber])` on QueueToken yet**: Prisma cannot enforce a
   date-part extract in a schema constraint. The race condition (bug #9) will be fixed with a
   DB transaction in application code, not a schema constraint.
