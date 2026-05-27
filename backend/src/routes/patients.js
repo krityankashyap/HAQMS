@@ -126,7 +126,8 @@ router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
 
     res.json({ message: `Successfully deleted patient ${patient.name}` });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete patient', details: error.message });
+    console.error('[patients] DELETE /:id:', error);
+    res.status(500).json({ error: 'Failed to delete patient' });
   }
 });
 
