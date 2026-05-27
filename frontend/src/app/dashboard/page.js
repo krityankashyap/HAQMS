@@ -1024,30 +1024,20 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Reporting details benchmark */}
-                  <div className="flex items-center gap-3 p-3 bg-amber-500/10 text-slate-700 dark:text-slate-300 text-xs rounded-lg border border-amber-500/20 leading-5">
-                    <Clock className="h-5 w-5 text-amber-500 shrink-0" />
-                    <div>
-                      <strong>Performance Diagnostic:</strong> API execution resolved in{' '}
-                      <span className="font-bold text-amber-500">{adminReportData.timeTakenMs} ms</span>. 
-                      Sequential nested database calls loops reduce throughput. Optimization using Promise.all or single join aggregate is required.
-                    </div>
-                  </div>
-
                   {/* Summary widgets */}
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="p-4 bg-slate-500/5 border border-slate-200 dark:border-slate-800 rounded-xl">
-                      <span className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Total Physicians</span>
-                      <h4 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">{adminReportData.data.length}</h4>
+                      <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Total Physicians</span>
+                      <h4 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{adminReportData.data.length}</h4>
                     </div>
                     <div className="p-4 bg-slate-500/5 border border-slate-200 dark:border-slate-800 rounded-xl">
-                      <span className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Sum appointments</span>
-                      <h4 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
+                      <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Sum Appointments</span>
+                      <h4 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                         {adminReportData.data.reduce((sum, item) => sum + item.totalAppointments, 0)}
                       </h4>
                     </div>
                     <div className="p-4 bg-slate-500/5 border border-slate-200 dark:border-slate-800 rounded-xl">
-                      <span className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Total Sales ($)</span>
+                      <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Total Sales ($)</span>
                       <h4 className="text-2xl font-black text-teal-600 dark:text-teal-400 mt-1">
                         ${adminReportData.data.reduce((sum, item) => sum + item.revenue, 0)}
                       </h4>
