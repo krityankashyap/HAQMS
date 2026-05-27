@@ -66,7 +66,6 @@ export const AuthProvider = ({ children }) => {
       router.push('/dashboard');
       return { success: true };
     } catch (err) {
-      console.error('[AUTH-ERROR] Login request failed:', err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
