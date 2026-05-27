@@ -14,17 +14,8 @@ export default function Dashboard() {
   const { user, token, API_BASE_URL, logout } = useAuth();
   const router = useRouter();
 
-  // Navigation Guard
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user]);
-
-  if (!user) return null;
-
-  // Global State
-  const [activeTab, setActiveTab] = useState(user.role === 'ADMIN' ? 'reports' : user.role === 'RECEPTIONIST' ? 'patients' : 'appointments');
+  // Global State — default is overwritten by the effect below once user loads
+  const [activeTab, setActiveTab] = useState('appointments');
 
   // ==========================================
   // STATE FOR RECEPTIONIST WORKFLOWS
@@ -66,6 +57,18 @@ export default function Dashboard() {
   const [adminReportData, setAdminReportData] = useState(null);
   const [adminReportLoading, setAdminReportLoading] = useState(false);
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+
+  // Redirect to login if unauthenticated; set correct default tab when user first loads
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    } else {
+      setActiveTab(user.role === 'ADMIN' ? 'reports' : user.role === 'RECEPTIONIST' ? 'patients' : 'appointments');
+    }
+  }, [user?.role]);
+
+  // Guard — placed after all hooks so the Rules of Hooks are not violated
+  if (!user) return null;
 
   // ==========================================
   // RECEPTIONIST FUNCTIONS
