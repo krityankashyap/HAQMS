@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 // GET /api/queue
 // List all active queue tokens
-router.get('/', authenticate, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { doctorId, status } = req.query;
 
@@ -26,7 +26,8 @@ router.get('/', authenticate, async (req, res) => {
 
     res.json(tokens);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve queue', details: error.message });
+    console.error('[queue] GET /:', error);
+    res.status(500).json({ error: 'Failed to retrieve queue' });
   }
 });
 
